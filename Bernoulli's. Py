@@ -1,1 +1,74 @@
+import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib.animation import FuncAnimation
 
+# ------------------ CONFIG ------------------
+NUM_PARTICLES = 40
+FPS = 60
+INTERVAL = 1000 / FPS
+
+# Pipe shape (Venturi)
+def pipe_radius(x):
+    if -2 < x < 2:
+        return 0.5   # narrow section
+    return 1.2       # wide section
+
+# ------------------ SETUP ------------------
+fig, ax = plt.subplots(figsize=(10, 4))
+ax.set_xlim(-6, 6)
+ax.set_ylim(-2, 2)
+ax.set_title("Bernoulli’s Principle: Velocity ↑ → Pressure ↓", fontsize=14)
+
+ax.axis("off")
+
+# Draw pipe walls
+x_vals = np.linspace(-6, 6, 400)
+upper_wall = [pipe_radius(x) for x in x_vals]
+lower_wall = [-pipe_radius(x) for x in x_vals]
+
+ax.plot(x_vals, upper_wall, color="blue", linewidth=2)
+ax.plot(x_vals, lower_wall, color="blue", linewidth=2)
+
+# Pressure labels
+ax.text(-4.5, 1.4, "High Pressure\nLow Velocity", fontsize=10, color="green")
+ax.text(0, 1.4, "Low Pressure\nHigh Velocity", fontsize=10, color="red", ha="center")
+ax.text(4.5, 1.4, "High Pressure\nLow Velocity", fontsize=10, color="green", ha="right")
+
+# Formula
+ax.text(0, -1.7, r"$P + \frac{1}{2}\rho v^2 = \text{constant}$",
+        fontsize=14, ha="center")
+
+# ------------------ PARTICLES ------------------
+particles_x = np.linspace(-6, 6, NUM_PARTICLES)
+particles_y = np.random.uniform(-0.8, 0.8, NUM_PARTICLES)
+
+scat = ax.scatter(particles_x, particles_y, color="cyan", s=20)
+
+# ------------------ ANIMATION ------------------
+def update(frame):
+    global particles_x
+
+    for i in range(NUM_PARTICLES):
+        x = particles_x[i]
+
+        # Velocity based on pipe width
+        if -2 < x < 2:
+            velocity = 0.12   # faster in narrow section
+        else:
+            velocity = 0.05   # slower in wide section
+
+        particles_x[i] += velocity
+
+        if particles_x[i] > 6:
+            particles_x[i] = -6
+
+        # Keep particle inside pipe
+        r = pipe_radius(particles_x[i])
+        particles_y[i] = np.clip(particles_y[i], -r + 0.05, r - 0.05)
+
+    scat.set_offsets(np.c_[particles_x, particles_y])
+    return scat,
+
+anim = FuncAnimation(fig, update, interval=INTERVAL)
+
+plt.show()
